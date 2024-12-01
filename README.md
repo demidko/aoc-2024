@@ -2,6 +2,6 @@
 
 Pass the puzzle input, day and part, for example:
 
-```shell
+```sh
 cat input | cargo run --release 1.1
 ```
