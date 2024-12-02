@@ -14,11 +14,11 @@ fn main() {
 fn d1_1() {
     let mut left_side = Vec::new();
     let mut right_side = Vec::new();
-    for l in stdin().lines() {
-        let l = l.unwrap();
-        if l.is_empty() {
-            break;
-        }
+    for l in stdin()
+        .lines()
+        .filter_map(|l| l.ok())
+        .take_while(|l| !l.is_empty())
+    {
         let mut l = l.split("   ");
         let a = l.next().unwrap().parse::<u128>().unwrap();
         left_side.push(a);
@@ -37,22 +37,26 @@ fn d1_1() {
 fn d1_2() {
     let mut left_side = Vec::new();
     let mut right_side = HashMap::<u128, u128>::new();
-    for l in stdin().lines() {
-        let l = l.unwrap();
-        if l.is_empty() {
-            break;
-        }
-        let mut l = l.split("   ");
-        let a = l.next().unwrap().parse::<u128>().unwrap();
-        left_side.push(a);
-        let b = l.next().unwrap().parse::<u128>().unwrap();
-        *right_side.entry(b).or_default() += 1;
-    }
-    let mut sum = 0;
-    for x in left_side {
-        sum += x * right_side.get(&x).unwrap_or(&0);
-    }
+    stdin()
+        .lines()
+        .filter_map(|l| l.ok())
+        .take_while(|l| !l.is_empty())
+        .map(|l| d1_tuple(l))
+        .for_each(|(left, right)| {
+            left_side.push(left);
+            *right_side.entry(right).or_default() += 1;
+        });
+    let sum = left_side
+        .iter()
+        .fold(0, |acc, x| acc + x * right_side.get(&x).unwrap_or(&0));
     println!("{}", sum);
+}
+
+fn d1_tuple(l: String) -> (u128, u128) {
+    let mut l = l.split("   ");
+    let left = l.next().unwrap().parse::<u128>().unwrap();
+    let right = l.next().unwrap().parse::<u128>().unwrap();
+    (left, right)
 }
 
 fn d1_distance(a: u128, b: u128) -> u128 {
