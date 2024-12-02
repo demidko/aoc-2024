@@ -29,7 +29,9 @@ fn d1_1() {
     left_side.sort();
     right_side.sort();
     for i in 0..left_side.len() {
-        sum += d1_distance(left_side[i], right_side[i]);
+        let a = left_side[i];
+        let b = right_side[i];
+        sum += if a > b { a - b } else { b - a }
     }
     println!("{}", sum);
 }
@@ -41,7 +43,12 @@ fn d1_2() {
         .lines()
         .filter_map(|l| l.ok())
         .take_while(|l| !l.is_empty())
-        .map(|l| d1_tuple(l))
+        .map(|l| {
+            let mut l = l.split("   ");
+            let left = l.next().unwrap().parse::<u128>().unwrap();
+            let right = l.next().unwrap().parse::<u128>().unwrap();
+            (left, right)
+        })
         .for_each(|(left, right)| {
             left_side.push(left);
             *right_side.entry(right).or_default() += 1;
@@ -50,19 +57,4 @@ fn d1_2() {
         .iter()
         .fold(0, |acc, x| acc + x * right_side.get(&x).unwrap_or(&0));
     println!("{}", sum);
-}
-
-fn d1_tuple(l: String) -> (u128, u128) {
-    let mut l = l.split("   ");
-    let left = l.next().unwrap().parse::<u128>().unwrap();
-    let right = l.next().unwrap().parse::<u128>().unwrap();
-    (left, right)
-}
-
-fn d1_distance(a: u128, b: u128) -> u128 {
-    if a > b {
-        a - b
-    } else {
-        b - a
-    }
 }
