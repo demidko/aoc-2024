@@ -162,16 +162,6 @@ fn d3_interpreter(line: String, conditions_enabled: bool) -> u128 {
             params.clear();
             continue;
         }
-        if c.is_alphabetic() || c == '\'' {
-            if params.is_empty() {
-                func.push(c);
-            } else {
-                func.clear();
-                params.clear();
-                func.push(c);
-            }
-            continue;
-        }
         if c.is_numeric() {
             if params.is_empty() {
                 func.push(c);
@@ -201,18 +191,10 @@ fn d3_interpreter(line: String, conditions_enabled: bool) -> u128 {
             }
             params.push(c);
             match d3_try_execute_function(&func, &params) {
-                D3Enable => {
-                    if conditions_enabled {
-                        enabled = true
-                    }
-                }
-                D3Disable => {
-                    if conditions_enabled {
-                        enabled = false
-                    }
-                }
+                D3Enable => enabled = true,
+                D3Disable => enabled = false,
                 D3NumberResult(number) => {
-                    if enabled {
+                    if conditions_enabled.not() || enabled {
                         sum += number;
                     }
                 }
@@ -222,12 +204,17 @@ fn d3_interpreter(line: String, conditions_enabled: bool) -> u128 {
             params.clear();
             continue;
         }
-        func.clear();
-        params.clear();
+        if params.is_empty() {
+            func.push(c);
+        } else {
+            func.clear();
+            params.clear();
+            func.push(c);
+        }
     }
     if func.is_empty().not() && params.is_empty().not() {
         if let D3NumberResult(number) = d3_try_execute_function(&func, &params) {
-            if enabled {
+            if conditions_enabled.not() || enabled {
                 sum += number;
             }
         }
@@ -280,10 +267,10 @@ fn d3_try_execute_function(func: &str, params: &str) -> D3FuncResult {
 }
 
 fn d3_2() {
-    let sum: u128 = stdin()
+    let line = stdin()
         .lines()
         .filter_map(|l| l.ok())
-        .map(|l| d3_interpreter(l, true))
-        .sum();
-    println!("{}", sum);
+        .collect::<Vec<String>>()
+        .join("");
+    println!("{}", d3_interpreter(line, true));
 }
