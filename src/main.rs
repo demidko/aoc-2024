@@ -1,7 +1,9 @@
+use crate::D3FuncResult::{D3EmptyResult, D3NumberResult};
 use std::collections::HashMap;
 use std::env::args;
 use std::io::stdin;
 use std::ops::Not;
+use D3FuncResult::{D3Disable, D3Enable};
 
 fn main() {
     let arg_error_msg = "Pass valid day and part numbers, e.g. 1.1";
@@ -10,6 +12,8 @@ fn main() {
         "1.2" => d1_2(),
         "2.1" => d2_1(),
         "2.2" => d2_2(),
+        "3.1" => d3_1(),
+        "3.2" => d3_2(),
         _ => panic!("{}", arg_error_msg),
     }
 }
@@ -117,7 +121,7 @@ fn d2_is_safe_report_with_df(report: &Vec<u128>) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn d2_2() {
@@ -128,5 +132,158 @@ fn d2_2() {
         .map(|l| d2_take_report(l))
         .filter(|r| d2_is_safe_report_with_df(r))
         .count();
+    println!("{}", sum);
+}
+
+fn d3_1() {
+    let sum: u128 = stdin()
+        .lines()
+        .filter_map(|l| l.ok())
+        .map(|l| d3_interpreter(l, false))
+        .sum();
+    println!("{}", sum);
+}
+
+fn d3_interpreter(line: String, conditions_enabled: bool) -> u128 {
+    let mut func = String::new();
+    let mut params = String::new();
+    let mut sum = 0u128;
+    let mut enabled = true;
+    for c in line.chars() {
+        if c == '(' {
+            if func.is_empty() {
+                continue;
+            }
+            if params.is_empty() {
+                params.push(c);
+                continue;
+            }
+            func.clear();
+            params.clear();
+            continue;
+        }
+        if c.is_alphabetic() || c == '\'' {
+            if params.is_empty() {
+                func.push(c);
+            } else {
+                func.clear();
+                params.clear();
+                func.push(c);
+            }
+            continue;
+        }
+        if c.is_numeric() {
+            if params.is_empty() {
+                func.push(c);
+            } else {
+                params.push(c);
+            }
+            continue;
+        }
+        if c == ',' {
+            if func.is_empty() {
+                continue;
+            }
+            if params.is_empty() {
+                continue;
+            }
+            if params.ends_with(',') {
+                func.clear();
+                params.clear();
+                continue;
+            }
+            params.push(c);
+            continue;
+        }
+        if c == ')' {
+            if func.is_empty() {
+                continue;
+            }
+            params.push(c);
+            match d3_try_execute_function(&func, &params) {
+                D3Enable => {
+                    if conditions_enabled {
+                        enabled = true
+                    }
+                }
+                D3Disable => {
+                    if conditions_enabled {
+                        enabled = false
+                    }
+                }
+                D3NumberResult(number) => {
+                    if enabled {
+                        sum += number;
+                    }
+                }
+                _ => {}
+            }
+            func.clear();
+            params.clear();
+            continue;
+        }
+        func.clear();
+        params.clear();
+    }
+    if func.is_empty().not() && params.is_empty().not() {
+        if let D3NumberResult(number) = d3_try_execute_function(&func, &params) {
+            if enabled {
+                sum += number;
+            }
+        }
+    }
+    sum
+}
+
+enum D3FuncResult {
+    D3Enable,
+    D3Disable,
+    D3EmptyResult,
+    D3NumberResult(u128),
+}
+
+fn d3_try_execute_function(func: &str, params: &str) -> D3FuncResult {
+    if params == "()" {
+        if func.ends_with("do") {
+            return D3Enable;
+        }
+        if func.ends_with("don't") {
+            return D3Disable;
+        }
+        return D3EmptyResult;
+    }
+    if func.ends_with("mul") {
+        let params = params
+            .strip_prefix('(')
+            .unwrap()
+            .strip_suffix(')')
+            .unwrap()
+            .split(',')
+            .collect::<Vec<&str>>();
+        if params.len() != 2 {
+            return D3EmptyResult;
+        }
+        let mut mul = 1u128;
+        for p in params {
+            if p.len() > 3 {
+                return D3EmptyResult;
+            }
+            if let Ok(p) = p.parse::<u128>() {
+                mul *= p;
+            } else {
+                return D3EmptyResult;
+            }
+        }
+        return D3NumberResult(mul);
+    }
+    D3EmptyResult
+}
+
+fn d3_2() {
+    let sum: u128 = stdin()
+        .lines()
+        .filter_map(|l| l.ok())
+        .map(|l| d3_interpreter(l, true))
+        .sum();
     println!("{}", sum);
 }
