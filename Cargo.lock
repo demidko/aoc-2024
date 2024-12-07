@@ -6,6 +6,7 @@ version = 4
 name = "aoc-2024"
 version = "0.1.0"
 dependencies = [
+ "is-odd",
  "itertools",
 ]
 
@@ -14,6 +15,12 @@ name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
+
+[[package]]
+name = "is-odd"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "774d9618121c276cc7a8d08e30bef03dda2c39708773fd937aa2452ba8ed9243"
 
 [[package]]
 name = "itertools"

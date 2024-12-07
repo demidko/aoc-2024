@@ -1,6 +1,7 @@
 use crate::D3FuncResult::{D3EmptyResult, D3NumberResult};
+use is_odd::IsOdd;
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env::args;
 use std::io::stdin;
 use std::ops::Not;
@@ -400,7 +401,85 @@ fn d4_2_is_mas(t: &(&D4Char, &D4Char, &D4Char)) -> bool {
 struct D4Char(i32, i32, char);
 
 fn d5_1() {
-    todo!()
+    let lines = stdin().lines().filter_map(|l| l.ok()).collect_vec();
+    let rules = lines.iter().take_while(|l| !l.is_empty()).collect_vec();
+    let mut rules_keeper = D5_1RulesKeeper::new();
+    for r in &rules {
+        let (prev, next) = r
+            .split("|")
+            .filter_map(|n| n.parse::<u128>().ok())
+            .collect_tuple()
+            .unwrap();
+        rules_keeper.add_rule(prev, next);
+    }
+    let mut sum = 0u128;
+    for update_pages in lines.iter().skip(rules.len() + 1) {
+        let update_pages = update_pages
+            .split(",")
+            .filter_map(|n| n.parse::<u128>().ok())
+            .collect_vec();
+        if rules_keeper.is_ok_upd(&update_pages) {
+            sum += update_pages[d5_1_middle(update_pages.len())];
+        }
+    }
+    println!("{}", sum);
+}
+
+fn d5_1_middle(len: usize) -> usize {
+    assert!(len.is_odd());
+    (len - 1) / 2
+}
+
+struct D5_1RulesKeeper {
+    page_to_prev_pages: HashMap<u128, HashSet<u128>>,
+    page_to_next_pages: HashMap<u128, HashSet<u128>>,
+    empty: HashSet<u128>,
+}
+
+impl D5_1RulesKeeper {
+    fn new() -> Self {
+        Self {
+            page_to_prev_pages: HashMap::new(),
+            page_to_next_pages: HashMap::new(),
+            empty: HashSet::new(),
+        }
+    }
+
+    fn add_rule(&mut self, prev: u128, next: u128) {
+        self.page_to_prev_pages
+            .entry(next)
+            .or_default()
+            .insert(prev);
+        self.page_to_next_pages
+            .entry(prev)
+            .or_default()
+            .insert(next);
+    }
+
+    fn is_ok(&self, curr_page: u128, actual_prev_pages: &HashSet<u128>) -> bool {
+        let should_be_next = self
+            .page_to_next_pages
+            .get(&curr_page)
+            .unwrap_or(&self.empty);
+        for prev in actual_prev_pages {
+            if should_be_next.contains(prev) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn is_ok_upd(&self, upd: &Vec<u128>) -> bool {
+        let mut actual_prev = HashSet::new();
+        for &p in upd {
+            if self.is_ok(p, &actual_prev) {
+                actual_prev.insert(p);
+                continue;
+            }
+            return false;
+        }
+        true
+    }
 }
 
 fn d5_2() {
