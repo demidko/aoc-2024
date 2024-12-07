@@ -340,8 +340,64 @@ fn d4_1_is_xmas(t: &(char, char, char, char)) -> bool {
 }
 
 fn d4_2() {
-    todo!()
+    let mut left_diagonal_lines: HashMap<i32, Vec<D4Char>> = HashMap::new();
+    let mut right_diagonal_lines: HashMap<i32, Vec<D4Char>> = HashMap::new();
+    let mut line_idx = 0;
+    for l in stdin().lines().filter_map(|l| l.ok()) {
+        let mut char_idx = 0;
+        for c in l.chars() {
+            left_diagonal_lines
+                .entry(line_idx + char_idx)
+                .or_default()
+                .push(D4Char(line_idx, char_idx, c));
+            right_diagonal_lines
+                .entry(char_idx - line_idx)
+                .or_default()
+                .push(D4Char(line_idx, char_idx, c));
+            char_idx += 1;
+        }
+        line_idx += 1;
+    }
+    let mut left_mas: HashMap<&D4Char, u128> = HashMap::new();
+    left_diagonal_lines
+        .values()
+        .flat_map(|l| d4_2_collect_mas(l))
+        .for_each(|mas| *left_mas.entry(mas.1).or_default() += 1);
+    let mut right_mas: HashMap<&D4Char, u128> = HashMap::new();
+    right_diagonal_lines
+        .values()
+        .flat_map(|l| d4_2_collect_mas(l))
+        .for_each(|mas| *right_mas.entry(mas.1).or_default() += 1);
+    let mut xmas_total = 0u128;
+    for (p, left_count) in left_mas {
+        let right_count = right_mas.get(&p).unwrap_or(&0);
+        let xmas = left_count * right_count;
+        xmas_total += xmas;
+    }
+    println!("{}", xmas_total);
 }
+
+fn d4_2_collect_mas(l: &Vec<D4Char>) -> Vec<(&D4Char, &D4Char, &D4Char)> {
+    let mut vec = l
+        .iter()
+        .tuple_windows::<(_, _, _)>()
+        .filter(|t| d4_2_is_mas(t))
+        .collect_vec();
+    vec.extend(
+        l.iter()
+            .rev()
+            .tuple_windows::<(_, _, _)>()
+            .filter(|t| d4_2_is_mas(t)),
+    );
+    vec
+}
+
+fn d4_2_is_mas(t: &(&D4Char, &D4Char, &D4Char)) -> bool {
+    t.0 .2 == 'M' && t.1 .2 == 'A' && t.2 .2 == 'S'
+}
+
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
+struct D4Char(i32, i32, char);
 
 fn d5_1() {
     todo!()
