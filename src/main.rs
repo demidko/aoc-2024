@@ -1,4 +1,5 @@
 use crate::D3FuncResult::{D3EmptyResult, D3NumberResult};
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::env::args;
 use std::io::stdin;
@@ -14,6 +15,10 @@ fn main() {
         "2.2" => d2_2(),
         "3.1" => d3_1(),
         "3.2" => d3_2(),
+        "4.1" => d4_1(),
+        "4.2" => d4_2(),
+        "5.1" => d5_1(),
+        "5.2" => d5_2(),
         _ => panic!("{}", arg_error_msg),
     }
 }
@@ -273,4 +278,75 @@ fn d3_2() {
         .collect::<Vec<String>>()
         .join("");
     println!("{}", d3_interpreter(line, true));
+}
+
+fn d4_1() {
+    let mut horizontal_lines: Vec<String> = vec![];
+    let mut vertical_lines: HashMap<i32, String> = HashMap::new();
+    let mut left_diagonal_lines: HashMap<i32, String> = HashMap::new();
+    let mut right_diagonal_lines: HashMap<i32, String> = HashMap::new();
+    let unsorted_lines = stdin().lines().filter_map(|l| l.ok());
+    let mut line_idx = 0;
+    for l in unsorted_lines {
+        let mut char_idx = 0;
+        for c in l.chars() {
+            vertical_lines.entry(char_idx).or_default().push(c);
+            left_diagonal_lines
+                .entry(line_idx + char_idx)
+                .or_default()
+                .push(c);
+            right_diagonal_lines
+                .entry(char_idx - line_idx)
+                .or_default()
+                .push(c);
+            char_idx += 1;
+        }
+        horizontal_lines.push(l);
+        line_idx += 1;
+    }
+    let xmas = horizontal_lines
+        .iter()
+        .map(|l| d4_1_count_xmas(l))
+        .sum::<u128>()
+        + vertical_lines
+            .values()
+            .map(|l| d4_1_count_xmas(l))
+            .sum::<u128>()
+        + left_diagonal_lines
+            .values()
+            .map(|l| d4_1_count_xmas(l))
+            .sum::<u128>()
+        + right_diagonal_lines
+            .values()
+            .map(|l| d4_1_count_xmas(l))
+            .sum::<u128>();
+    println!("{}", xmas);
+}
+
+fn d4_1_count_xmas(l: &String) -> u128 {
+    l.chars()
+        .tuple_windows::<(_, _, _, _)>()
+        .filter(|t| d4_1_is_xmas(t))
+        .count() as u128
+        + l.chars()
+            .rev()
+            .tuple_windows::<(_, _, _, _)>()
+            .filter(|t| d4_1_is_xmas(t))
+            .count() as u128
+}
+
+fn d4_1_is_xmas(t: &(char, char, char, char)) -> bool {
+    t == &('X', 'M', 'A', 'S')
+}
+
+fn d4_2() {
+    todo!()
+}
+
+fn d5_1() {
+    todo!()
+}
+
+fn d5_2() {
+    todo!()
 }
