@@ -404,21 +404,14 @@ fn d5_1() {
     let lines = stdin().lines().filter_map(|l| l.ok()).collect_vec();
     let rules = lines.iter().take_while(|l| !l.is_empty()).collect_vec();
     let mut rules_keeper = D5_1RulesKeeper::new();
-    for r in &rules {
-        let (prev, next) = r
-            .split("|")
-            .filter_map(|n| n.parse::<u128>().ok())
-            .collect_tuple()
-            .unwrap();
-        rules_keeper.add_rule(prev, next);
-    }
+    rules_keeper.learn(&rules);
     let mut sum = 0u128;
     for update_pages in lines.iter().skip(rules.len() + 1) {
         let update_pages = update_pages
             .split(",")
             .filter_map(|n| n.parse::<u128>().ok())
             .collect_vec();
-        if rules_keeper.is_ok_upd(&update_pages) {
+        if !rules_keeper.is_ok_upd(&update_pages) {
             sum += update_pages[d5_1_middle(update_pages.len())];
         }
     }
@@ -442,6 +435,17 @@ impl D5_1RulesKeeper {
             page_to_prev_pages: HashMap::new(),
             page_to_next_pages: HashMap::new(),
             empty: HashSet::new(),
+        }
+    }
+
+    fn learn(&mut self, rules: &Vec<&String>) {
+        for r in rules {
+            let (prev, next) = r
+                .split("|")
+                .filter_map(|n| n.parse::<u128>().ok())
+                .collect_tuple()
+                .unwrap();
+            self.add_rule(prev, next);
         }
     }
 
@@ -480,8 +484,54 @@ impl D5_1RulesKeeper {
         }
         true
     }
+
+    pub fn fix(&self, old_order: &Vec<u128>) -> Vec<u128> {
+        let mut new_order = vec![];
+        for x in old_order {
+            self.insert_to_right_place(&mut new_order, *x);
+        }
+        new_order
+    }
+
+    fn insert_to_right_place(&self, new_order: &mut Vec<u128>, new_element: u128) {
+        let should_be_prev = self
+            .page_to_prev_pages
+            .get(&new_element)
+            .unwrap_or(&self.empty);
+        let should_be_next = self
+            .page_to_next_pages
+            .get(&new_element)
+            .unwrap_or(&self.empty);
+        for index in 0..new_order.len() {
+            let current_element = &new_order[index];
+            if should_be_prev.contains(current_element) {
+                continue;
+            }
+            if should_be_next.contains(current_element) {
+                return new_order.insert(index, new_element);
+            }
+        }
+        new_order.push(new_element)
+    }
 }
 
 fn d5_2() {
-    todo!()
+    let lines = stdin().lines().filter_map(|l| l.ok()).collect_vec();
+    let rules = lines.iter().take_while(|l| !l.is_empty()).collect_vec();
+    let mut rules_keeper = D5_1RulesKeeper::new();
+    rules_keeper.learn(&rules);
+    let mut sum = 0u128;
+    for old_order in lines.iter().skip(rules.len() + 1) {
+        let old_order = old_order
+            .split(",")
+            .filter_map(|n| n.parse::<u128>().ok())
+            .collect_vec();
+        if rules_keeper.is_ok_upd(&old_order) {
+            continue;
+        }
+        let new_order = rules_keeper.fix(&old_order);
+        let middle_element = new_order[d5_1_middle(old_order.len())];
+        sum += middle_element;
+    }
+    println!("{}", sum);
 }
